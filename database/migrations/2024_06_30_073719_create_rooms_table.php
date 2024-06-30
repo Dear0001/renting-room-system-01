@@ -17,6 +17,7 @@ return new class extends Migration
             $table->text('room_description')->nullable();
             $table->foreignId('floor_id')->constrained('floors')->onDelete('cascade');
             $table->foreignId('category_id')->constrained('room_categories');
+            $table->boolean('is_available')->default(true);
             $table->timestamps();
         });
     }

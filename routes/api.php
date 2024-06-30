@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\API\FloorAPIController;
 use App\Http\Controllers\API\RoomAPIController;
+use App\Http\Controllers\API\RoomCategoryAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,4 +15,20 @@ Route::group(['prefix' => 'api'], function () {
     Route::post('rooms', [RoomAPIController::class, 'store']);
     Route::put('rooms/{id}', [RoomAPIController::class, 'update']);
     Route::delete('rooms/{id}', [RoomAPIController::class, 'destroy']);
+    Route::put('/rooms/{id}/book', [RoomAPIController::class, 'bookRoom']);
+    Route::put('/rooms/{id}/free', [RoomAPIController::class, 'freeRoom']);
+    Route::get('/rooms/available', [RoomAPIController::class, 'getAvailableRooms']);
+    Route::get('/rooms/unavailable', [RoomAPIController::class, 'getUnavailableRooms']);
+
+    //Room Categories
+    Route::post('room-categories', [RoomCategoryAPIController::class, 'store']);
+    Route::get('room-categories/{id}', [RoomCategoryAPIController::class, 'show']);
+    Route::put('room-categories/{id}', [RoomCategoryAPIController::class, 'update']);
+    Route::delete('room-categories/{id}', [RoomCategoryAPIController::class, 'destroy']);
+    //Floors
+    Route::get('/floors', [FloorAPIController::class, 'index']);
+    Route::post('/floors', [FloorAPIController::class, 'store']);
+    Route::get('/floors/{id}', [FloorAPIController::class, 'show']);
+    Route::put('/floors/{id}', [FloorAPIController::class, 'update']);
+    Route::delete('/floors/{id}', [FloorAPIController::class, 'destroy']);
 });

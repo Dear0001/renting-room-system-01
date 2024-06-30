@@ -14,7 +14,9 @@ class Room extends Model
         'room_description',
         'floor_id',
         'category_id',
+        'is_available',
     ];
+
     protected $table = 'rooms';
 
     public function floor()
