@@ -19,6 +19,7 @@
                         <p class="card-text"><strong>Description:</strong> {{ $room->room_description }}</p>
                         <p class="card-text"><strong>Floor:</strong> {{ $room->floor->floor_name }}</p>
                         <p class="card-text"><strong>Category:</strong> {{ $room->category->name }}</p>
+                        <p class="card-text"><strong>Price:</strong>{{ $room->price }}</p>
                         <p class="card-text"><strong>Availability:</strong> {{ $room->is_available ? 'Available' : 'Not Available' }}</p>
                     </div>
                 </div>
