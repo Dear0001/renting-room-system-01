@@ -72,11 +72,12 @@ class RoomAPIController extends Controller
         try {
             $validatedData = $request->validate([
                 'room_number' => 'required|unique:rooms',
+                'price' => 'nullable|numeric|min:0',
                 'room_description' => 'nullable',
                 'floor_id' => 'required|exists:floors,id',
                 'category_id' => 'required|exists:room_categories,id',
                 'is_available' => 'required|string',
-                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:10240',
             ]);
 
             if ($request->hasFile('image')) {
@@ -236,14 +237,14 @@ class RoomAPIController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            // Validate the incoming request data
             $validatedData = $request->validate([
-                'room_number' => 'required|unique:rooms,room_number,' . $id,
+                'room_number' => 'required|unique:rooms',
+                'price' => 'nullable|numeric|min:0',
                 'room_description' => 'nullable',
                 'floor_id' => 'required|exists:floors,id',
                 'category_id' => 'required|exists:room_categories,id',
                 'is_available' => 'required|string',
-                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:10240',
             ]);
 
             $room = Room::findOrFail($id);

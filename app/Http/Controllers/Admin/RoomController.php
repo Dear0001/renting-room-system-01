@@ -49,11 +49,12 @@ class RoomController extends Controller
         try {
             $validatedData = $request->validate([
                 'room_number' => 'required|unique:rooms',
+                'price' => 'nullable|numeric|min:0',
                 'room_description' => 'nullable',
                 'floor_id' => 'required|exists:floors,id',
                 'category_id' => 'required|exists:room_categories,id',
-                'is_available' => 'b',
-                'image' => 'nullable|image|max:2048',
+                'is_available' => 'required|string',
+                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:10240',
             ]);
 
             if ($request->hasFile('image')) {
@@ -115,12 +116,13 @@ class RoomController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'room_number' => 'required|unique:rooms,room_number,' . $id,
+                'room_number' => 'required|unique:rooms',
+                'price' => 'nullable|numeric|min:0',
                 'room_description' => 'nullable',
                 'floor_id' => 'required|exists:floors,id',
                 'category_id' => 'required|exists:room_categories,id',
-                'is_available' => 'required|boolean',
-                'image' => 'nullable|image|max:2048',
+                'is_available' => 'required|string',
+                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:10240',
             ]);
 
             $room = Room::findOrFail($id);
