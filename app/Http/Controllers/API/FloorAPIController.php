@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Floor;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -13,75 +14,72 @@ use Illuminate\Support\Facades\Validator;
  *     description="API Endpoints for managing floors"
  * )
  */
+
 class FloorAPIController extends Controller
 {
     /**
      * Display a listing of the floors.
      *
+    /**
      * @OA\Get(
-     *     path="/api/floors",
-     *     tags={"Floors"},
-     *     summary="Get all floors",
-     *     description="Returns a list of all floors.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful operation",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/Floor")
-     *         )
-     *     )
+     *      path="/api/floor",
+     *      tags={"Floors"},
+     *      summary="Get all floors",
+     *      @OA\Response(
+     *          response=200,
+     *          description="List of floor",
+     *          @OA\JsonContent()
+     *      )
      * )
      */
     public function index()
     {
         $floors = Floor::all();
-        return response()->json($floors);
+        return response()->json([
+            'message' => 'Floors retrieved successfully',
+            'payload' => $floors
+        ], 200);
     }
 
     /**
-     * Store a newly created floor in storage.
-     *
      * @OA\Post(
-     *     path="/api/floors",
-     *     tags={"Floors"},
-     *     summary="Create a new floor",
-     *     description="Creates a new floor with the provided data.",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/FloorRequest")
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Floor created successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Floor")
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Invalid data provided",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="msg", type="string", example="Failed to create floor")
-     *         )
-     *     )
+     *      path="/api/floors",
+     *      tags={"Floors"},
+     *      summary="Create a new floors",
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(ref="#/components/schemas/RoomRequest")
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Created a new floor",
+     *          @OA\JsonContent()
+     *      )
      * )
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'floor_name' => 'required|string',
-            'floor_description' => 'nullable|string',
-        ]);
+        try{
+            $validator = Validator::make($request->all(), [
+                'floor_name' => 'required|string',
+                'floor_description' => 'nullable|string',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['msg' => 'Failed to create floor', 'errors' => $validator->errors()], 400);
+            if ($validator->fails()) {
+                return response()->json(['msg' => 'Failed to create floor', 'errors' => $validator->errors()], 400);
+            }
+
+            $floor = Floor::create([
+                'floor_name' => $request->floor_name,
+                'floor_description' => $request->floor_description,
+            ]);
+            return response()->json([
+                'message' => 'Floor created successfully',
+                'payload' => $floor
+            ], 201);
+        }catch (Exception $e) {
+            return response()->json(['msg' => 'Failed to create floor', 'errors' => $e->getMessage()], 400);
         }
-
-        $floor = Floor::create([
-            'floor_name' => $request->floor_name,
-            'floor_description' => $request->floor_description,
-        ]);
-
-        return response()->json($floor, 201);
     }
 
     /**
@@ -114,9 +112,15 @@ class FloorAPIController extends Controller
      */
     public function show($id)
     {
-        $floor = Floor::findOrFail($id);
-
-        return response()->json($floor);
+        try {
+            $floor = Floor::findOrFail($id);
+            return response()->json([
+                'message' => 'Floor retrieved successfully',
+                'payload' => $floor
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['msg' => 'Floor not found', 'errors' => $e->getMessage()], 404);
+        }
     }
 
     /**
@@ -160,22 +164,29 @@ class FloorAPIController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'floor_name' => 'required|string',
-            'floor_description' => 'nullable|string',
-        ]);
+        try {
+            $floor = Floor::findOrFail($id);
+            $validator = Validator::make($request->all(), [
+                'floor_name' => 'required|string',
+                'floor_description' => 'nullable|string',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['msg' => 'Failed to update floor', 'errors' => $validator->errors()], 400);
+            if ($validator->fails()) {
+                return response()->json(['msg' => 'Failed to update floor', 'errors' => $validator->errors()], 400);
+            }
+
+            $floor->update([
+                'floor_name' => $request->floor_name,
+                'floor_description' => $request->floor_description,
+            ]);
+
+            return response()->json([
+                'message' => 'Floor updated successfully',
+                'payload' => $floor
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['msg' => 'Floor not found', 'errors' => $e->getMessage()], 404);
         }
-
-        $floor = Floor::findOrFail($id);
-        $floor->update([
-            'floor_name' => $request->floor_name,
-            'floor_description' => $request->floor_description,
-        ]);
-
-        return response()->json($floor);
     }
 
     /**
@@ -210,9 +221,12 @@ class FloorAPIController extends Controller
      */
     public function destroy($id)
     {
-        $floor = Floor::findOrFail($id);
-        $floor->delete();
-
-        return response()->json(["msg" => "Floor deleted successfully"]);
+        try {
+            $floor = Floor::findOrFail($id);
+            $floor->delete();
+            return response()->json(['msg' => 'Floor deleted successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['msg' => 'Floor not found', 'errors' => $e->getMessage()], 404);
+        }
     }
 }

@@ -4,8 +4,13 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\RoomCategory;
+use Exception;
 use Illuminate\Http\Request;
 
+
+/**
+ * @OA\Tag(name="Room Category", description="Room management endpoints")
+ */
 class RoomCategoryAPIController extends Controller
 {
     /**
@@ -26,8 +31,19 @@ class RoomCategoryAPIController extends Controller
      */
     public function index()
     {
-        $roomCategories = RoomCategory::all();
-        return response()->json($roomCategories);
+        try {
+            $roomCategory = RoomCategory::all();
+            return response()->json([
+                'message' => 'Rooms retrieved successfully',
+                'payload' => $roomCategory
+            ], 200);
+        }catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve rooms',
+                'error' => $e->getMessage()
+            ], 400);
+        }
+
     }
 
     /**
@@ -56,17 +72,27 @@ class RoomCategoryAPIController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string',
+                'description' => 'nullable|string',
+            ]);
 
-        $roomCategory = RoomCategory::create([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
+            $roomCategory = RoomCategory::create([
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
 
-        return response()->json($roomCategory, 201);
+            return response()->json([
+                'message' => 'Room category created successfully',
+                'payload' => $roomCategory
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to create room category',
+                'error' => $e->getMessage()
+            ], 400);
+        }
     }
 
     /**
@@ -97,8 +123,15 @@ class RoomCategoryAPIController extends Controller
      */
     public function show($id)
     {
-        $roomCategory = RoomCategory::findOrFail($id);
-        return response()->json($roomCategory);
+        try {
+            $roomCategory = RoomCategory::findOrFail($id);
+            return response()->json($roomCategory);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Room category not found',
+                'error' => $e->getMessage()
+            ], 404);
+        }
     }
 
     /**
@@ -140,18 +173,28 @@ class RoomCategoryAPIController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string',
+                'description' => 'nullable|string',
+            ]);
 
-        $roomCategory = RoomCategory::findOrFail($id);
-        $roomCategory->update([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
+            $roomCategory = RoomCategory::findOrFail($id);
+            $roomCategory->update([
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
 
-        return response()->json($roomCategory);
+            return response()->json([
+                'message' => 'Rooms Category update successfully',
+                'payload' => $roomCategory
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update room category',
+                'error' => $e->getMessage()
+            ], 400);
+        }
     }
 
     /**
@@ -184,9 +227,19 @@ class RoomCategoryAPIController extends Controller
      */
     public function destroy($id)
     {
-        $roomCategory = RoomCategory::findOrFail($id);
-        $roomCategory->delete();
+        try {
+            $roomCategory = RoomCategory::findOrFail($id);
+            $roomCategory->delete();
 
-        return response()->json(["msg" => "Room category deleted successfully"]);
+            return response()->json([
+                'message' => 'Room category deleted successfully'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Room category not found',
+                'error' => $e->getMessage()
+            ], 404);
+
+        }
     }
 }

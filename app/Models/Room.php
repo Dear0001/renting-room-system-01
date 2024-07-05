@@ -15,9 +15,14 @@ class Room extends Model
         'floor_id',
         'category_id',
         'is_available',
+        'image'
     ];
 
     protected $table = 'rooms';
+
+    public static function findOrFail($id)
+    {
+    }
 
     public function floor()
     {

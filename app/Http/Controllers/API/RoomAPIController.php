@@ -7,19 +7,27 @@ use Exception;
 use Illuminate\Http\Request;
 use App\Models\Room;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+
+
 
 /**
  * @OA\Info(
- *      title="Room API",
- *      version="1.0.0",
- *      description="API endpoints for managing rooms.",
- *      @OA\Contact(
- *          email="support@example.com",
- *          name="Support Team"
- *      )
+ *     title="Your API Title",
+ *     version="1.0.0",
+ *     description="Your API Description",
+ *     @OA\Contact(
+ *         email="your-email@example.com",
+ *         name="Your Name"
+ *     ),
+ *     @OA\License(
+ *         name="MIT License",
+ *         url="https://opensource.org/licenses/MIT"
+ *     )
  * )
  */
+
 class RoomAPIController extends Controller
 {
     /**
@@ -61,41 +69,116 @@ class RoomAPIController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'room_number' => 'required|unique:rooms',
-            'room_description' => 'nullable',
-            'floor_id' => 'required|exists:floors,id',
-            'category_id' => 'required|exists:room_categories,id',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'room_number' => 'required|unique:rooms',
+                'room_description' => 'nullable',
+                'floor_id' => 'required|exists:floors,id',
+                'category_id' => 'required|exists:room_categories,id',
+                'is_available' => 'required|string',
+                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            ]);
 
-        $room = Room::create($validatedData);
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                if ($image !== null && $image->isValid()) {
+                    $filename = time() . '_' . $image->getClientOriginalName();
+                    $uploadPath = public_path('img/');
+                    $image->move($uploadPath, $filename);
+                    $validatedData['image'] = 'img/' . $filename;
+                } else {
+                    return response()->json(['message' => 'Invalid file uploaded'], 400);
+                }
+            }
 
-        return response()->json([
-            'message' => 'Room created successfully',
-            'payload' => $room
-        ], 201);
+            $room = Room::create($validatedData);
+            $room->load('floor', 'category');
+
+            return response()->json([
+                'message' => 'Room created successfully',
+                'payload' => [
+                    'room' => $room,
+                    'image_url' => isset($validatedData['image']) ? url($validatedData['image']) : null,
+                ]
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to create room: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get all rooms by category name.
+     *
+     * @OA\Get(
+     *      path="/api/rooms/category/{name}",
+     *      tags={"Rooms"},
+     *      summary="Get rooms by category name",
+     *      @OA\Parameter(
+     *          name="name",
+     *          in="path",
+     *          required=true,
+     *          description="Name of the category",
+     *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="List of rooms by category name",
+     *          @OA\JsonContent(
+     *              type="array",
+     *              @OA\Items(ref="#/components/schemas/Room")
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=404,
+     *          description="No rooms found for the specified category",
+     *          @OA\JsonContent()
+     *      )
+     * )
+     */
+    public
+    function getAllRoomByCategoryName($name)
+    {
+        try {
+            $rooms = Room::with('floor', 'category')
+                ->whereHas('category', function ($query) use ($name) {
+                    $query->where('name', 'like', '%' . $name . '%');
+                })->get();
+
+            return response()->json([
+                'message' => 'Rooms retrieved successfully',
+                'payload' => $rooms
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to retrieve rooms: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
      * @OA\Get(
      *      path="/api/rooms/{id}",
      *      tags={"Rooms"},
-     *      summary="Get a specific room",
+     *      summary="Get room details",
      *      @OA\Parameter(
      *          name="id",
      *          in="path",
      *          required=true,
-     *          description="ID of the room",
+     *          description="Room ID",
      *          @OA\Schema(type="integer")
      *      ),
      *      @OA\Response(
      *          response=200,
      *          description="Room details",
+     *          @OA\JsonContent(ref="#/components/schemas/Room")
+     *      ),
+     *      @OA\Response(
+     *          response=404,
+     *          description="Room not found",
      *          @OA\JsonContent()
      *      )
      * )
      */
-    public function show($id)
+    public
+    function show($id)
     {
         try {
             $room = Room::with('floor', 'category')->findOrFail($id);
@@ -105,66 +188,106 @@ class RoomAPIController extends Controller
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Room not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to retrieve room: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * @OA\Put(
-     *      path="/api/rooms/{id}",
-     *      tags={"Rooms"},
-     *      summary="Update a room",
-     *      @OA\Parameter(
-     *          name="id",
-     *          in="path",
-     *          required=true,
-     *          description="ID of the room",
-     *          @OA\Schema(type="integer")
-     *      ),
-     *      @OA\RequestBody(
-     *          required=true,
-     *          @OA\JsonContent(ref="#/components/schemas/RoomRequest")
-     *      ),
-     *      @OA\Response(
-     *          response=200,
-     *          description="Updated room",
-     *          @OA\JsonContent()
-     *      ),
-     *      @OA\Response(
-     *          response=404,
-     *          description="Room not found",
-     *          @OA\JsonContent()
-     *      ),
-     *      @OA\Response(
-     *          response=422,
-     *          description="Validation error",
-     *          @OA\JsonContent()
-     *      )
+     * @OA\Schema(
+     *     schema="RoomRequest",
+     *     type="object",
+     *     required={"room_number", "floor_id", "category_id", "is_available"},
+     *     @OA\Property(
+     *         property="room_number",
+     *         type="string",
+     *         description="Room number"
+     *     ),
+     *     @OA\Property(
+     *         property="room_description",
+     *         type="string",
+     *         nullable=true,
+     *         description="Room description"
+     *     ),
+     *     @OA\Property(
+     *         property="floor_id",
+     *         type="integer",
+     *         description="Floor ID"
+     *     ),
+     *     @OA\Property(
+     *         property="category_id",
+     *         type="integer",
+     *         description="Category ID"
+     *     ),
+     *     @OA\Property(
+     *         property="is_available",
+     *         type="boolean",
+     *         description="Availability status"
+     *     ),
+     *     @OA\Property(
+     *         property="image",
+     *         type="string",
+     *         format="binary",
+     *         nullable=true,
+     *         description="Room image"
+     *     )
      * )
      */
     public function update(Request $request, $id)
     {
         try {
+            // Validate the incoming request data
             $validatedData = $request->validate([
                 'room_number' => 'required|unique:rooms,room_number,' . $id,
                 'room_description' => 'nullable',
                 'floor_id' => 'required|exists:floors,id',
                 'category_id' => 'required|exists:room_categories,id',
+                'is_available' => 'required|string',
+                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
             ]);
 
             $room = Room::findOrFail($id);
-            $room->update($validatedData);
-            $room = Room::with('floor', 'category')->findOrFail($id); // to include related data
 
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                if ($image !== null && $image->isValid()) {
+                    $filename = time() . '_' . $image->getClientOriginalName();
+                    $uploadPath = public_path('img/');
+                    $image->move($uploadPath, $filename);
+                    $validatedData['image'] = 'img/' . $filename;
+                } else {
+                    return response()->json(['message' => 'Invalid file uploaded'], 400);
+                }
+            }
+
+            // Update the room with validated data
+            $room->update($validatedData);
+
+            // Reload relationships for the updated room
+            $room->load('floor', 'category');
+
+            // Log the request data for debugging
+            Log::info('Request Data', $request->all());
+
+            // Respond with success message and updated room data
             return response()->json([
                 'message' => 'Room updated successfully',
-                'payload' => $room
-            ], 200);
-        } catch (ModelNotFoundException $e) {
+                'payload' => [
+                    'room' => $room,
+                    'image_url' => isset($validatedData['image']) ? url($validatedData['image']) : null,
+                ]
+            ], 201);
+
+        } catch (ModelNotFoundException) {
             return response()->json(['message' => 'Room not found.'], 404);
         } catch (ValidationException $exception) {
             return response()->json(['message' => $exception->errors()], 422);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to update room: ' . $e->getMessage()], 500);
         }
+
     }
+
 
     /**
      * @OA\Delete(
@@ -175,12 +298,13 @@ class RoomAPIController extends Controller
      *          name="id",
      *          in="path",
      *          required=true,
-     *          description="ID of the room",
+     *          description="Room ID",
      *          @OA\Schema(type="integer")
      *      ),
      *      @OA\Response(
-     *          response=204,
-     *          description="Room deleted"
+     *          response=200,
+     *          description="Deleted the room",
+     *          @OA\JsonContent()
      *      ),
      *      @OA\Response(
      *          response=404,
@@ -189,178 +313,24 @@ class RoomAPIController extends Controller
      *      )
      * )
      */
-    public function destroy($id)
+    public
+    function destroy($id)
     {
         try {
             $room = Room::findOrFail($id);
+            // Delete the image file if it exists
+            if ($room->image) {
+                unlink(public_path($room->image));
+            }
             $room->delete();
 
             return response()->json([
                 'message' => 'Room deleted successfully'
-            ], 204);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Room not found.'], 404);
-        }
-    }
-
-    /**
-     * Get all available rooms.
-     *
-     * @OA\Get(
-     *      path="/api/rooms/available",
-     *      tags={"Rooms"},
-     *      summary="Get available rooms",
-     *      @OA\Response(
-     *          response=200,
-     *          description="List of available rooms",
-     *          @OA\JsonContent(
-     *              type="array",
-     *              @OA\Items(ref="#/components/schemas/Room")
-     *          )
-     *      )
-     * )
-     */
-    public function getAvailableRooms()
-    {
-        try {
-            $availableRooms = Room::where('is_available', true)
-                ->with('floor', 'category')
-                ->get();
-
-            if ($availableRooms->isEmpty()) {
-                return response()->json(['message' => 'No available rooms found.'], 404);
-            }
-
-            return response()->json([
-                'message' => 'Available rooms retrieved successfully',
-                'payload' => $availableRooms
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
-        }
-    }
-
-
-    /**
-     * Get all unavailable rooms.
-     *
-     * @OA\Get(
-     *      path="/api/rooms/unavailable",
-     *      tags={"Rooms"},
-     *      summary="Get unavailable rooms",
-     *      @OA\Response(
-     *          response=200,
-     *          description="List of unavailable rooms",
-     *          @OA\JsonContent(
-     *              type="array",
-     *              @OA\Items(ref="#/components/schemas/Room")
-     *          )
-     *      )
-     * )
-     */
-    public function getUnavailableRooms()
-    {
-        try {
-            $unavailableRooms = Room::where('is_available', false)
-                ->with('floor', 'category')
-                ->get();
-
-            if ($unavailableRooms->isEmpty()) {
-                return response()->json(['message' => 'No unavailable rooms found.'], 404);
-            }
-
-            return response()->json([
-                'message' => 'Unavailable rooms retrieved successfully',
-                'payload' => $unavailableRooms
-            ], 200);
-        } catch (Exception $e) {
-            return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
-        }
-    }
-
-
-
-    /**
-     * @OA\Put(
-     *      path="/api/rooms/{id}/book",
-     *      tags={"Rooms"},
-     *      summary="Mark a room as booked",
-     *      @OA\Parameter(
-     *          name="id",
-     *          in="path",
-     *          required=true,
-     *          description="ID of the room",
-     *          @OA\Schema(type="integer")
-     *      ),
-     *      @OA\Response(
-     *          response=200,
-     *          description="Room marked as booked",
-     *          @OA\JsonContent()
-     *      ),
-     *      @OA\Response(
-     *          response=404,
-     *          description="Room not found",
-     *          @OA\JsonContent()
-     *      )
-     * )
-     */
-    public function bookRoom($id)
-    {
-        try {
-            $room = Room::findOrFail($id);
-            $room->is_available = false;
-            $room->save();
-            $room = Room::with('floor', 'category')->findOrFail($id);
-
-
-            return response()->json([
-                'message' => 'Room booked successfully',
-                'payload' => $room
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Room not found.'], 404);
-        }
-    }
-
-
-    /**
-     * @OA\Put(
-     *      path="/api/rooms/{id}/free",
-     *      tags={"Rooms"},
-     *      summary="Mark a room as available",
-     *      @OA\Parameter(
-     *          name="id",
-     *          in="path",
-     *          required=true,
-     *          description="ID of the room",
-     *          @OA\Schema(type="integer")
-     *      ),
-     *      @OA\Response(
-     *          response=200,
-     *          description="Room marked as available",
-     *          @OA\JsonContent()
-     *      ),
-     *      @OA\Response(
-     *          response=404,
-     *          description="Room not found",
-     *          @OA\JsonContent()
-     *      )
-     * )
-     */
-    public function freeRoom($id)
-    {
-        try {
-            $room = Room::findOrFail($id);
-            $room->is_available = true;
-            $room->save();
-            $room = Room::with('floor', 'category')->findOrFail($id);
-
-            return response()->json([
-                'message' => 'Room marked as available successfully',
-                'payload' => $room
-            ], 200);
-        } catch (ModelNotFoundException) {
-            return response()->json(['message' => 'Room not found.'], 404);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Failed to delete room: ' . $e->getMessage()], 500);
         }
     }
 }

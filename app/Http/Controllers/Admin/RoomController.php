@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Room;
 use App\Models\Floor;
 use App\Models\RoomCategory;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Validation\ValidationException;
+use Exception;
 
 class RoomController extends Controller
 {
@@ -15,8 +19,12 @@ class RoomController extends Controller
      */
     public function index()
     {
-        $rooms = Room::with('floor', 'category')->paginate(10);
-        return view('admin.rooms.index', compact('rooms'));
+        try {
+            $rooms = Room::with('floor', 'category')->paginate(10);
+            return view('rooms.index', compact('rooms'));
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to fetch rooms: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -24,9 +32,13 @@ class RoomController extends Controller
      */
     public function create()
     {
-        $floors = Floor::all();
-        $categories = RoomCategory::all();
-        return view('admin.rooms.create', compact('floors', 'categories'));
+        try {
+            $floors = Floor::all();
+            $categories = RoomCategory::all();
+            return view('rooms.create', compact('floors', 'categories'));
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to load creation form: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -34,26 +46,49 @@ class RoomController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'room_number' => 'required|unique:rooms',
-            'room_description' => 'nullable',
-            'floor_id' => 'required|exists:floors,id',
-            'category_id' => 'required|exists:room_categories,id',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'room_number' => 'required|unique:rooms',
+                'room_description' => 'nullable',
+                'floor_id' => 'required|exists:floors,id',
+                'category_id' => 'required|exists:room_categories,id',
+                'is_available' => 'b',
+                'image' => 'nullable|image|max:2048',
+            ]);
 
-        Room::create($request->all());
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $uploadPath = 'img/';
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path($uploadPath), $filename);
+                $validatedData['image'] = $uploadPath . $filename;
+            }
 
-        return redirect()->route('admin.rooms.index')
-                         ->with('success', 'Room created successfully');
+            $room = Room::create($validatedData);
+            $room->load('floor', 'category');
+
+            return redirect()->route('rooms.index')->with('success', 'Room created successfully');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to create room: ' . $e->getMessage())->withInput();
+        }
     }
+
 
     /**
      * Display the specified resource.
      */
     public function show($id)
     {
-        $room = Room::findOrFail($id);
-        return view('admin.rooms.show', compact('room'));
+        try {
+            $room = Room::with('floor', 'category')->findOrFail($id);
+            return view('rooms.show', compact('room'));
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', 'Room not found.');
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to fetch room details: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -61,10 +96,16 @@ class RoomController extends Controller
      */
     public function edit($id)
     {
-        $room = Room::findOrFail($id);
-        $floors = Floor::all();
-        $categories = RoomCategory::all();
-        return view('admin.rooms.edit', compact('room', 'floors', 'categories'));
+        try {
+            $room = Room::findOrFail($id);
+            $floors = Floor::all();
+            $categories = RoomCategory::all();
+            return view('rooms.edit', compact('room', 'floors', 'categories'));
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', 'Room not found.');
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to load edit form: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -72,18 +113,40 @@ class RoomController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'room_number' => 'required|unique:rooms,room_number,' . $id,
-            'room_description' => 'nullable',
-            'floor_id' => 'required|exists:floors,id',
-            'category_id' => 'required|exists:room_categories,id',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'room_number' => 'required|unique:rooms,room_number,' . $id,
+                'room_description' => 'nullable',
+                'floor_id' => 'required|exists:floors,id',
+                'category_id' => 'required|exists:room_categories,id',
+                'is_available' => 'required|boolean',
+                'image' => 'nullable|image|max:2048',
+            ]);
 
-        $room = Room::findOrFail($id);
-        $room->update($request->all());
+            $room = Room::findOrFail($id);
 
-        return redirect()->route('admin.rooms.index')
-                         ->with('success', 'Room updated successfully');
+            if ($request->hasFile('image')) {
+                if ($room->image) {
+                    Storage::delete($room->image); // Delete old image using Storage facade
+                }
+                $image = $request->file('image');
+                $uploadPath = 'img/';
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path($uploadPath), $filename);
+                $validatedData['image'] = $uploadPath . $filename;
+            }
+
+            $room->update($validatedData);
+            $room->load('floor', 'category');
+
+            return redirect()->route('admin.rooms.index')->with('success', 'Room updated successfully');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', 'Room not found.');
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to update room: ' . $e->getMessage())->withInput();
+        }
     }
 
     /**
@@ -91,10 +154,18 @@ class RoomController extends Controller
      */
     public function destroy($id)
     {
-        $room = Room::findOrFail($id);
-        $room->delete();
+        try {
+            $room = Room::findOrFail($id);
+            if ($room->image) {
+                Storage::delete($room->image); // Delete associated image using Storage facade
+            }
+            $room->delete();
 
-        return redirect()->route('admin.rooms.index')
-                         ->with('success', 'Room deleted successfully');
+            return redirect()->route('admin.rooms.index')->with('success', 'Room deleted successfully');
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', 'Room not found.');
+        } catch (Exception $e) {
+            return back()->with('error', 'Failed to delete room: ' . $e->getMessage());
+        }
     }
 }

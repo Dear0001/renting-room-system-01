@@ -14,5 +14,8 @@ class RoomCategory extends Model
         'description',
     ];
 
-    protected $table = 'room_categories';
+    public function rooms()
+    {
+        return $this->hasMany(Room::class, 'category_id');
+    }
 }
