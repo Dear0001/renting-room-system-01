@@ -101,7 +101,7 @@
     <div class="bg-light border-end" id="sidebar-wrapper">
         <div class="sidebar-heading text-dark">Admin Dashboard</div>
         <div class="list-group list-group-flush">
-            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="index.html"><i class="fas fa-door-open me-2"></i>Room</a>
+            <a class="list-group-item list-group-item-action list-group-item-light p-3" href="http://127.0.0.1:8000/"><i class="fas fa-door-open me-2"></i>Room</a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3" href="floors.html"><i class="fas fa-building me-2"></i>Floor</a>
             <a class="list-group-item list-group-item-action list-group-item-light p-3" href="categories.html"><i class="fas fa-list-alt me-2"></i>Category</a>
         </div>
