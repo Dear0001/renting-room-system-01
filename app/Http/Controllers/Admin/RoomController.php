@@ -82,6 +82,7 @@ class RoomController extends Controller
      */
     public function show($id)
     {
+        dd($id);
         try {
             $room = Room::with('floors', 'category')->findOrFail($id);
             return view('rooms.show', compact('room'));
@@ -98,13 +99,22 @@ class RoomController extends Controller
     public function edit($id)
     {
         try {
-            $room = Room::findOrFail($id);
+            // Attempt to find the room by its ID
+            $room = Room::find($id);
+
+            // Check if the room exists
+            if (!$room) {
+                return back()->with('error', 'Room not found.');
+            }
+
+            // Fetch all floors and room categories
             $floors = Floor::all();
             $categories = RoomCategory::all();
+
+            // Return the edit view with the room and related data
             return view('rooms.edit', compact('room', 'floors', 'categories'));
-        } catch (ModelNotFoundException $e) {
-            return back()->with('error', 'Room not found.');
         } catch (Exception $e) {
+            // Handle any unexpected exceptions
             return back()->with('error', 'Failed to load edit form: ' . $e->getMessage());
         }
     }
