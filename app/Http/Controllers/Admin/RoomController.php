@@ -157,15 +157,19 @@ class RoomController extends Controller
     public function destroy($id)
     {
         try {
-            $room = Room::findOrFail($id);
+            $room = Room::find($id);
+
+            if (!$room) {
+                return back()->with('error', 'Room not found.');
+            }
+
             if ($room->image) {
                 Storage::delete($room->image); // Delete associated image using Storage facade
             }
+
             $room->delete();
 
             return redirect()->route('admin.rooms.index')->with('success', 'Room deleted successfully');
-        } catch (ModelNotFoundException $e) {
-            return back()->with('error', 'Room not found.');
         } catch (Exception $e) {
             return back()->with('error', 'Failed to delete room: ' . $e->getMessage());
         }
