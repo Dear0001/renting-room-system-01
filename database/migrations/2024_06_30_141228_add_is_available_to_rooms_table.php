@@ -9,7 +9,9 @@ class AddIsAvailableToRoomsTable extends Migration
     public function up()
     {
         Schema::table('rooms', function (Blueprint $table) {
-            $table->boolean('is_available')->default(true);
+            if (!Schema::hasColumn('rooms', 'is_available')) {
+                $table->boolean('is_available')->default(true);
+            }
         });
     }
 
