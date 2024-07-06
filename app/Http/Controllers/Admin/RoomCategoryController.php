@@ -14,7 +14,7 @@ class RoomCategoryController extends Controller
     public function index()
     {
         $categories = RoomCategory::all();
-        return view('admin.room_categories.index', compact('categories'));
+        return view('categories.index', compact('categories'));
     }
 
     /**
@@ -22,12 +22,11 @@ class RoomCategoryController extends Controller
      */
     public function create()
     {
-        return view('admin.room_categories.create');
+        return view('categories.create');
     }
 
     /**
      * Store a newly created resource in storage.
-
      */
     public function store(Request $request)
     {
@@ -45,7 +44,7 @@ class RoomCategoryController extends Controller
     public function show($id)
     {
         $category = RoomCategory::findOrFail($id);
-        return view('admin.room_categories.show', compact('category'));
+        return view('categories.show', compact('category'));
     }
 
     /**
@@ -54,12 +53,11 @@ class RoomCategoryController extends Controller
     public function edit($id)
     {
         $category = RoomCategory::findOrFail($id);
-        return view('admin.room_categories.edit', compact('category'));
+        return view('categories.edit', compact('category'));
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function update(Request $request, $id)
     {
