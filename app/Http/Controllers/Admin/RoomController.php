@@ -11,6 +11,7 @@ use App\Models\RoomCategory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class RoomController extends Controller
 {
@@ -124,43 +125,34 @@ class RoomController extends Controller
      */
     public function update(Request $request, $id)
     {
+        Log::info('Updating room with ID: ' . $request->input('name'));
+
         try {
-            $validatedData = $request->validate([
-                'room_number' => 'required|unique:rooms',
-                'price' => 'nullable|numeric|min:0',
-                'room_description' => 'nullable',
-                'floor_id' => 'required|exists:floors,id',
-                'category_id' => 'required|exists:room_categories,id',
-                'is_available' => 'required|string',
-                'image' => 'nullable|image|mimes:jpg,png,jpeg|max:10240',
-            ]);
+            // Find the room by its ID
+            $room = Room::find($id);
 
-            $room = Room::findOrFail($id);
-
-            if ($request->hasFile('image')) {
-                if ($room->image) {
-                    Storage::delete($room->image); // Delete old image using Storage facade
-                }
-                $image = $request->file('image');
-                $uploadPath = 'img/';
-                $filename = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path($uploadPath), $filename);
-                $validatedData['image'] = $uploadPath . $filename;
+            // Check if the room exists
+            if (!$room) {
+                return back()->with('error', 'Room not found.');
             }
 
-            $room->update($validatedData);
-            $room->load('floors', 'category');
+            // Update room attributes based on incoming request data
+            $room->name = $request->input('name');
+            $room->description = $request->input('description');
+            $room->floor_id = $request->input('floor_id');
+            $room->category_id = $request->input('category_id');
 
+            // Save the updated room
+            $room->save();
+
+            // Redirect with success message
             return redirect()->route('admin.rooms.index')->with('success', 'Room updated successfully');
-        } catch (ValidationException $e) {
-            return back()->withErrors($e->errors())->withInput();
-        } catch (ModelNotFoundException $e) {
-            return back()->with('error', 'Room not found.');
         } catch (Exception $e) {
-            return back()->with('error', 'Failed to update room: ' . $e->getMessage())->withInput();
+            // Handle any unexpected exceptions
+            Log::error('Failed to update room: ' . $e->getMessage());
+            return back()->with('error', 'Failed to update room: ' . $e->getMessage());
         }
     }
-
     /**
      * Remove the specified resource from storage.
      */

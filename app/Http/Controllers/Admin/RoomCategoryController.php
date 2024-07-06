@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\RoomCategory;
+use Illuminate\Support\Facades\Log;
 
 class RoomCategoryController extends Controller
 {
@@ -30,13 +31,18 @@ class RoomCategoryController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info($request->all());
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'category_name' => 'required|string|max:255',
+            'category_description' => 'nullable|string',
         ]);
+        $data = [
+            'name' => $validatedData['category_name'],
+            'description' => $validatedData['category_description'],
+        ];
 
-        $category = RoomCategory::create($validatedData);
-
+        $category = RoomCategory::create($data);
+        Log::info('RoomCategory created: ' . $category->id);
         return redirect()->route('admin.room-categories.index')
             ->with('success', 'Room category created successfully.');
     }
@@ -62,7 +68,7 @@ class RoomCategoryController extends Controller
     public function update(Request $request, $id)
     {
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'string|max:255',
             'description' => 'nullable|string',
         ]);
 
