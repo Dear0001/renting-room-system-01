@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\FloorAPIController;
-use App\Http\Controllers\API\ImageUploadController;
+
 use App\Http\Controllers\API\RoomAPIController;
 use App\Http\Controllers\API\RoomCategoryAPIController;
 use Illuminate\Http\Request;
@@ -34,5 +34,4 @@ Route::get('/user', function (Request $request) {
     Route::put('/floors/{id}', [FloorAPIController::class, 'update']);
     Route::delete('/floors/{id}', [FloorAPIController::class, 'destroy']);
 
-    Route::post('/upload-image', [ImageUploadController::class, 'uploadImage']);
-
+  
