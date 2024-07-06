@@ -44,7 +44,7 @@ class RoomAPIController extends Controller
      */
     public function index()
     {
-        $rooms = Room::with('floor', 'category')->get();
+        $rooms = Room::with('floors', 'category')->get();
         return response()->json([
             'message' => 'Rooms retrieved successfully',
             'payload' => $rooms
@@ -93,7 +93,7 @@ class RoomAPIController extends Controller
             }
 
             $room = Room::create($validatedData);
-            $room->load('floor', 'category');
+            $room->load('floors', 'category');
 
             return response()->json([
                 'message' => 'Room created successfully',
@@ -140,7 +140,7 @@ class RoomAPIController extends Controller
     function getAllRoomByCategoryName($name)
     {
         try {
-            $rooms = Room::with('floor', 'category')
+            $rooms = Room::with('floors', 'category')
                 ->whereHas('category', function ($query) use ($name) {
                     $query->where('name', 'like', '%' . $name . '%');
                 })->get();
@@ -182,7 +182,7 @@ class RoomAPIController extends Controller
     function show($id)
     {
         try {
-            $room = Room::with('floor', 'category')->findOrFail($id);
+            $room = Room::with('floors', 'category')->findOrFail($id);
             return response()->json([
                 'message' => 'Room retrieved successfully',
                 'payload' => $room
@@ -265,7 +265,7 @@ class RoomAPIController extends Controller
             $room->update($validatedData);
 
             // Reload relationships for the updated room
-            $room->load('floor', 'category');
+            $room->load('floors', 'category');
 
             // Log the request data for debugging
             Log::info('Request Data', $request->all());

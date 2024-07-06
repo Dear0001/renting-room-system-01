@@ -23,10 +23,11 @@ Route::get('/user', function (Request $request) {
     Route::get('/rooms/category/{name}', [RoomAPIController::class, 'getAllRoomByCategoryName']);
 
     //Room Categories
-    Route::post('/room-categories', [RoomCategoryAPIController::class, 'store']);
-    Route::get('/room-categories/{id}', [RoomCategoryAPIController::class, 'show']);
-    Route::put('/room-categories/{id}', [RoomCategoryAPIController::class, 'update']);
-    Route::delete('/room-categories/{id}', [RoomCategoryAPIController::class, 'destroy']);
+    Route::get('/categories', [RoomCategoryAPIController::class, 'index']);
+    Route::post('/categories', [RoomCategoryAPIController::class, 'store']);
+    Route::get('/categories/{id}', [RoomCategoryAPIController::class, 'show']);
+    Route::put('/categories/{id}', [RoomCategoryAPIController::class, 'update']);
+    Route::delete('/categories/{id}', [RoomCategoryAPIController::class, 'destroy']);
     //Floors
     Route::get('/floors', [FloorAPIController::class, 'index']);
     Route::post('/floors', [FloorAPIController::class, 'store']);

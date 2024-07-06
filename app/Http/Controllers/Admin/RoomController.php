@@ -66,7 +66,7 @@ class RoomController extends Controller
             }
 
             $room = Room::create($validatedData);
-            $room->load('floor', 'category');
+            $room->load('floors', 'category');
 
             return redirect()->route('rooms.index')->with('success', 'Room created successfully');
         } catch (ValidationException $e) {
@@ -83,7 +83,7 @@ class RoomController extends Controller
     public function show($id)
     {
         try {
-            $room = Room::with('floor', 'category')->findOrFail($id);
+            $room = Room::with('floors', 'category')->findOrFail($id);
             return view('rooms.show', compact('room'));
         } catch (ModelNotFoundException $e) {
             return back()->with('error', 'Room not found.');
@@ -139,7 +139,7 @@ class RoomController extends Controller
             }
 
             $room->update($validatedData);
-            $room->load('floor', 'category');
+            $room->load('floors', 'category');
 
             return redirect()->route('admin.rooms.index')->with('success', 'Room updated successfully');
         } catch (ValidationException $e) {

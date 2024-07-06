@@ -22,12 +22,12 @@ class FloorAPIController extends Controller
      *
     /**
      * @OA\Get(
-     *      path="/api/floor",
+     *      path="/api/floors",
      *      tags={"Floors"},
      *      summary="Get all floors",
      *      @OA\Response(
      *          response=200,
-     *          description="List of floor",
+     *          description="List of floors",
      *          @OA\JsonContent()
      *      )
      * )
@@ -52,7 +52,7 @@ class FloorAPIController extends Controller
      *      ),
      *      @OA\Response(
      *          response=201,
-     *          description="Created a new floor",
+     *          description="Created a new floors",
      *          @OA\JsonContent()
      *      )
      * )
@@ -66,7 +66,7 @@ class FloorAPIController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['msg' => 'Failed to create floor', 'errors' => $validator->errors()], 400);
+                return response()->json(['msg' => 'Failed to create floors', 'errors' => $validator->errors()], 400);
             }
 
             $floor = Floor::create([
@@ -78,18 +78,18 @@ class FloorAPIController extends Controller
                 'payload' => $floor
             ], 201);
         }catch (Exception $e) {
-            return response()->json(['msg' => 'Failed to create floor', 'errors' => $e->getMessage()], 400);
+            return response()->json(['msg' => 'Failed to create floors', 'errors' => $e->getMessage()], 400);
         }
     }
 
     /**
-     * Display the specified floor.
+     * Display the specified floors.
      *
      * @OA\Get(
      *     path="/api/floors/{id}",
      *     tags={"Floors"},
-     *     summary="Get a specific floor",
-     *     description="Returns a specific floor based on ID.",
+     *     summary="Get a specific floors",
+     *     description="Returns a specific floors based on ID.",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -124,13 +124,13 @@ class FloorAPIController extends Controller
     }
 
     /**
-     * Update the specified floor in storage.
+     * Update the specified floors in storage.
      *
      * @OA\Put(
      *     path="/api/floors/{id}",
      *     tags={"Floors"},
-     *     summary="Update a floor",
-     *     description="Updates a specific floor based on ID with the provided data.",
+     *     summary="Update a floors",
+     *     description="Updates a specific floors based on ID with the provided data.",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -150,7 +150,7 @@ class FloorAPIController extends Controller
      *         response=400,
      *         description="Invalid data provided",
      *         @OA\JsonContent(
-     *             @OA\Property(property="msg", type="string", example="Failed to update floor")
+     *             @OA\Property(property="msg", type="string", example="Failed to update floors")
      *         )
      *     ),
      *     @OA\Response(
@@ -172,7 +172,7 @@ class FloorAPIController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json(['msg' => 'Failed to update floor', 'errors' => $validator->errors()], 400);
+                return response()->json(['msg' => 'Failed to update floors', 'errors' => $validator->errors()], 400);
             }
 
             $floor->update([
@@ -190,13 +190,13 @@ class FloorAPIController extends Controller
     }
 
     /**
-     * Remove the specified floor from storage.
+     * Remove the specified floors from storage.
      *
      * @OA\Delete(
      *     path="/api/floors/{id}",
      *     tags={"Floors"},
-     *     summary="Delete a floor",
-     *     description="Deletes a specific floor based on ID.",
+     *     summary="Delete a floors",
+     *     description="Deletes a specific floors based on ID.",
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
