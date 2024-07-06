@@ -23,7 +23,7 @@
 
                     <a href="{{ route('rooms.show', $room->id) }}" class="btn btn-info btn-sm">View</a>
                     <a href="{{ route('rooms.edit', $room->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                    {{ dump( $room->id)}}
+               
                     <form action="{{ route('rooms.destroy', $room->id) }}" method="POST" style="display:inline;">
                         @csrf
                         @method('DELETE')
